@@ -46,10 +46,10 @@ vendor                                                  /vendor                e
 vendor                                                  /vendor                erofs   ro                                               wait,slotselect,avb,logical,first_stage_mount
 vendor_dlkm                                             /vendor_dlkm           ext4    ro,barrier=1,discard                             wait,slotselect,avb,logical,first_stage_mount
 vendor_dlkm                                             /vendor_dlkm           erofs   ro                                               wait,slotselect,avb,logical,first_stage_mount
-system_dlkm                                             /system_dlkm           ext4    ro,barrier=1,discard                        >
-system_dlkm                                             /system_dlkm           erofs   ro   
-odm                                                     /odm                   ext4    ro,barrier=1,discard                        >
-odm                                                     /odm                   erofs   ro  
+system_dlkm                                             /system_dlkm           ext4    ro,barrier=1,discard                             wait,slotselect,avb,logical,first_stage_mount
+system_dlkm                                             /system_dlkm           erofs   ro                                               wait,slotselect,avb,logical,first_stage_mount
+odm                                                     /odm                   ext4    ro,barrier=1,discard                             wait,slotselect,avb,logical,first_stage_mount
+odm                                                     /odm                   erofs   ro                                               wait,slotselect,avb,logical,first_stage_mount
 
 # Physical partitions
 /dev/block/bootdevice/by-name/boot                                 /boot                  emmc    defaults                                             slotselect,avb=vbmeta,first_stage_mount
