@@ -20,8 +20,6 @@ $(call inherit-product, $(DEVICE_PATH)/device.mk)
 # Include TWRP configurations
 $(call inherit-product, $(DEVICE_PATH)/twrp_config.mk)
 
-# Include Fox configurations
-$(call inherit-product, $(DEVICE_PATH)/fox_config.mk)
 
 PRODUCT_DEVICE := froggerPro
 PRODUCT_NAME := twrp_froggerPro
