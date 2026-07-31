@@ -35,6 +35,10 @@ on property:twrp.modules.loaded=true
     # Load ADSP firmware for PMIC
     wait /sys/kernel/boot_adsp/boot
     write /sys/kernel/boot_adsp/boot 1
+
+    # Fixes Battery Percentage and USB-OTG
+    write /sys/class/remoteproc/remoteproc1/state start
+
     wait /sys/class/power_supply/battery
 
     start health-hal-2-1
@@ -44,6 +48,5 @@ on property:twrp.modules.loaded=true
 
 on boot
     setprop sys.usb.config adb
-
 
 import /init.recovery.qcom_decrypt.rc
