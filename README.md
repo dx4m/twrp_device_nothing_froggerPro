@@ -39,7 +39,7 @@ Manifest        | https://github.com/nebrassy/platform_manifest_twrp_aosp.git
     - [x] .zip files
     - [x] .img files
 - [x] Backup and restore
-    - [ ] To external/removable devices (e.g. OTG device)
+    - [x] To external/removable devices (e.g. OTG device)
 - [x] Built-in features work normally
     - [x] ADB
         - [x] Sideload
