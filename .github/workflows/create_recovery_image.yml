@@ -63,6 +63,7 @@ jobs:
 
       - name: Clean up Swap
         run: |
+          sudo swapoff /swapfile
           sudo rm -rf /swapfile
 
       - name: Upload Artifacts
