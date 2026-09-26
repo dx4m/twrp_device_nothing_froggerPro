@@ -1,4 +1,4 @@
-name: Build TWRP-14.1 recovery for froggerPro
+name: Build TWRP-14 recovery for froggerPro
 
 on:
   workflow_dispatch:
@@ -46,10 +46,10 @@ jobs:
 
       - name: Make and mount swapfile
         run: |
-          sudo fallocate -l 16G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
+          sudo fallocate -l 16G ~/build_swap
+          sudo chmod 600 ~/build_swap
+          sudo mkswap ~/build_swap
+          sudo swapon ~/build_swap
 
       - name: Build Recovery
         run: |
@@ -63,8 +63,8 @@ jobs:
 
       - name: Clean up Swap
         run: |
-          sudo swapoff /swapfile
-          sudo rm -rf /swapfile
+          sudo swapoff ~/build_swap
+          sudo rm -rf ~/build_swap
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
