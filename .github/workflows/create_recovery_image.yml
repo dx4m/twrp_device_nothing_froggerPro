@@ -37,6 +37,7 @@ jobs:
         run: |
           echo "Syncing will take some time... public runners have 4 cores/16GB RAM"
           repo init --depth=1 -u https://github.com/nebrassy/platform_manifest_twrp_aosp.git -b twrp-14
+          sed -i '\|<remove-project path="external/guava" />|d' .repo/manifests/remove-minimal.xml
           repo sync -j$(nproc)
 
       - name: Checkout Device Tree
