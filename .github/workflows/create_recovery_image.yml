@@ -1,0 +1,74 @@
+name: Build TWRP-14.1 recovery for froggerPro
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  recovery:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Maximize Github Runner Space
+        uses: justinthelaw/maximize-github-runner-space@v0.9.0
+        with:
+          remove-dotnet: true
+          remove-android: true
+          remove-haskell: true
+          remove-codeql: true
+
+      - name: Setup Environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rsync git build-essential bc bison flex libssl-dev libelf-dev python3 python3-pip curl zip unzip
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
+          chmod a+x ~/repo
+          sudo cp ~/repo /usr/local/bin/
+          rm ~/repo
+
+      - name: Set up Git config
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Set up TWRP-14 Build Environment
+        run: |
+          echo "Syncing will take some time... public runners have 4 cores/16GB RAM"
+          repo init --depth=1 -u https://github.com/nebrassy/platform_manifest_twrp_aosp.git -b twrp-14
+          repo sync -j$(nproc)
+
+      - name: Checkout Device Tree
+        uses: actions/checkout@v7
+        with:
+          path: 'device/nothing/froggerPro'
+
+      - name: Make and mount swapfile
+        run: |
+          sudo fallocate -l 16G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+
+      - name: Build Recovery
+        run: |
+          echo "Building.. will take a loooooong loooong time..."
+          export ALLOW_MISSING_DEPENDENCIES=true
+          
+          source build/envsetup.sh
+          lunch twrp_froggerPro-ap2a-eng
+
+          m recoveryimage
+
+      - name: Clean up Swap
+        run: |
+          sudo rm -rf /swapfile
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          path: |
+            out/target/product/froggerPro/recovery.img
+          compression-level: 9
+          archive: true
