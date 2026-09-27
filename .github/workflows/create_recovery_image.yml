@@ -34,13 +34,18 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
       - name: Set up TWRP-14 Build Environment
+        id: setup-twrp
         run: |
           RAM=$(awk '/MemTotal/ { printf "%.0f", $2 / 1000 / 1024 }' /proc/meminfo)
           CORES=$(nproc)
+          START_TIME=$(date +%s)
           echo "Syncing will take some time... like 20min.. this runner has $CORES vcores and has $RAM GB RAM"
           repo init --depth=1 -u https://github.com/nebrassy/platform_manifest_twrp_aosp.git -b twrp-14
           sed -i '\|<remove-project path="external/guava" />|d' .repo/manifests/remove-minimal.xml
           repo sync -j$(nproc)
+          END_TIME=$(date +%s)
+
+          echo "sync_time=$((END_TIME - START_TIME))" >> $GITHUB_OUTPUT
 
       - name: Checkout Device Tree
         uses: actions/checkout@v7
@@ -54,15 +59,19 @@ jobs:
           sudo mkswap ~/build_swap
           sudo swapon ~/build_swap
 
-      - name: Build Recovery
+      - name: Build TWRP Recovery
+        id: build-recovery
         run: |
           echo "Building.. will take a loooooong loooong time..."
           export ALLOW_MISSING_DEPENDENCIES=true
-          
+         
+          START_TIME=$(date +%s)
           source build/envsetup.sh
           lunch twrp_froggerPro-ap2a-eng
 
           m recoveryimage
+          END_TIME=$(date +%s)
+          echo "build_time=$((END_TIME - START_TIME))" >> $GITHUB_OUTPUT
 
       - name: Clean up Swap
         run: |
@@ -72,6 +81,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
+          name: recovery-img-${{ github.sha }}
           path: |
             out/target/product/froggerPro/recovery.img
           compression-level: 9
@@ -102,12 +112,28 @@ jobs:
           git push origin "$next_tag"
           echo "next_tag=$next_tag" >> $GITHUB_OUTPUT
 
+      - name: Create Changelog
+        env:
+          SYNC_TIME: ${{ steps.setup-twrp.outputs.sync_time }}
+          BUILD_TIME: ${{ steps.build-recovery.outputs.build_time }}
+        run: |
+          echo "" > ${{ github.workspace }}/changelog.txt
+          echo "## Automatic TWRP Recovery Build for FroggerPro -- Nothing Phone (4a) Pro" >> ${{ github.workspace }}/changelog.txt
+          echo "" >> ${{ github.workspace }}/changelog.txt
+          echo "**TWRP Version:** 14.0" >> ${{ github.workspace }}/changelog.txt
+          echo "**Sync Time:** $((SYNC_TIME / 60))m$((SYNC_TIME % 60))s" >> ${{ github.workspace }}/changelog.txt
+          echo "**Build Time:** $((BUILD_TIME / 60))m$((BUILD_TIME % 60))s" >> ${{ github.workspace }}/changelog.txt
+          echo "" >> ${{ github.workspace }}/changelog.txt
+          echo "You can see this workflow run here: [Run #$GITHUB_RUN_NUMBER]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)" >> ${{ github.workspace }}/changelog.txt
+
+
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
           name: 'TWRP release'
           files: out/target/product/froggerPro/recovery.img
           tag_name: ${{ steps.tag.outputs.next_tag }}
+          body_path: ${{ github.workspace }}/changelog.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
