@@ -32,10 +32,12 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
+          
       - name: Set up TWRP-14 Build Environment
         run: |
-          echo "Syncing will take some time... public runners have 4 cores/16GB RAM"
+          RAM=$(awk '/MemTotal/ { printf "%.0f", $2 / 1000 / 1024 }' /proc/meminfo)
+          CORES=$(nproc)
+          echo "Syncing will take some time... like 20min.. this runner has $CORES vcores and has $RAM GB RAM"
           repo init --depth=1 -u https://github.com/nebrassy/platform_manifest_twrp_aosp.git -b twrp-14
           sed -i '\|<remove-project path="external/guava" />|d' .repo/manifests/remove-minimal.xml
           repo sync -j$(nproc)
@@ -74,3 +76,38 @@ jobs:
             out/target/product/froggerPro/recovery.img
           compression-level: 9
           archive: true
+
+      - name: Create Tag
+        working-directory: 'device/nothing/froggerPro'
+        id: tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          git fetch --tags
+
+          latest_tag=$(git tag --list 'v*' --sort=-version:refname | head -n 1)
+
+          if [ -z "$latest_tag" ]; then
+            next_tag="v1.0.0"
+          else
+            version="${latest_tag#v}"
+            IFS='.' read -r major minor patch <<< "$version"
+            next_tag="v${major}.${minor}.$((patch + 1))"
+          fi
+
+          git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/$REPO.git
+          git tag -a "$next_tag" "$SHA" -m "Release $next_tag"
+          git push origin "$next_tag"
+          echo "next_tag=$next_tag" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          name: 'TWRP release'
+          files: out/target/product/froggerPro/recovery.img
+          tag_name: ${{ steps.tag.outputs.next_tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
